@@ -10,22 +10,6 @@ export class Net {
 		this.net = Net.initNet(inputLayer, layers)
     }
 
-    public static printLayer(layer: number[][]) {
-        layer.forEach(
-            (neuron: number[]) => console.log(
-                `[${neuron.reduce((result: string, w: number) => result.concat(`${w},`),'',)}]`
-            )
-        );
-    }
-
-	public exportNet(): number[][][] {
-		return this.net;
-    }
-
-    public printNet(): void {
-        this.net.forEach(Net.printLayer);
-    }
-
     public learn(inputs: number[][], outputs: number[][], learningRate: number) {
         const ALLOWED_ERROR = 0.01;
         let error = 9999;
