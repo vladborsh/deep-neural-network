@@ -1,3 +1,5 @@
+import { ActivationType } from "./types/activation-type.enum";
+
 export class Activations {
 
     public static get FUNCTION(): Record<ActivationType, (x: number) => number> {
@@ -15,7 +17,3 @@ export class Activations {
     }
 }
 
-export enum ActivationType {
-    RELU,
-    SIGMOID,
-}

@@ -1,9 +1,7 @@
-import { Activations, ActivationType } from "./activations";
-
-interface NetOutputs {
-    activations: number[][][],
-    outputs: number[][][],
-}
+import { Activations } from "./activations";
+import { NetOutputs } from "./types/net-outputs.intrface";
+import { ActivationType } from "./types/activation-type.enum";
+import { LearnOutput } from "./types/learn-output.interface";
 
 export class Net {
 	private net: number[][][];
@@ -21,17 +19,18 @@ export class Net {
             error = 0;
             
             inputs.forEach((input: number[], i: number) => {
-                const { dW, lost } = this.learnStep(input, outputs[i]);
+                const { dW, lost }: LearnOutput = this.learnStep(input, outputs[i]);
                 this.updateNet(dW, learningRate);
                 error += lost;
             });
             
             error /= outputs.length;
+            console.log(error);
             step++;
         }
     }
 
-    public learnStep(input: number[], output: number[]): { dW: number[][][], lost: number } {
+    private learnStep(input: number[], output: number[]): LearnOutput {
         const netOutputs = this.forwardPropagate(input);
 
         return {
@@ -40,13 +39,13 @@ export class Net {
         };
     }
 
-	public forwardPropagate(input: number[]): NetOutputs {
+	private forwardPropagate(input: number[]): NetOutputs {
 		return this.net.reduce(
-            ({outputs, activations}: NetOutputs, currentLayer: number[][], i: number, net: number[][][]) => {
+            ({sum, activations}: NetOutputs, currentLayer: number[][], i: number, net: number[][][]) => {
                 const dot: number[][] = Net.dot(activations[i], currentLayer);
 
                 return {
-                    outputs:  [ ...outputs, dot ],
+                    sum:  [ ...sum, dot ],
                     activations: [
                         ...activations,
                         Net.applyFunction(
@@ -58,16 +57,16 @@ export class Net {
                     ],
                 };
             },
-			{ outputs: [], activations: [[input]] },
+			{ sum: [], activations: [[input]] },
 		);
     }
 
-    public backPropagate({outputs, activations}: NetOutputs, expectedOutputs: number[]): number[][][] {
+    private backPropagate({sum, activations}: NetOutputs, expectedOutputs: number[]): number[][][] {
         const dW: number[][][] = new Array(this.net.length);
 
         let delta = Net.product(
             [ Net.calculateCost(activations[activations.length-1][0], expectedOutputs) ],
-            Net.applyFunction(outputs[outputs.length-1], Activations.PRIME[ActivationType.SIGMOID]),
+            Net.applyFunction(sum[sum.length-1], Activations.PRIME[ActivationType.SIGMOID]),
         );
 
         dW[this.net.length-1] = Net.dot(Net.transpose(activations[activations.length-2]), delta)
@@ -75,7 +74,7 @@ export class Net {
         for (let i = this.net.length-2; i > -1; i--) {
             delta = Net.product(
                 Net.transpose(Net.dot(this.net[i+1], Net.transpose(delta))),
-                Net.applyFunction(outputs[i], Activations.PRIME[ActivationType.RELU]),
+                Net.applyFunction(sum[i], Activations.PRIME[ActivationType.RELU]),
             );
             
             dW[i] = Net.dot(Net.transpose(activations[i]), delta)
@@ -84,7 +83,7 @@ export class Net {
         return dW;
     }
 
-    public updateNet(dW: number[][][], learningRate: number): void {
+    private updateNet(dW: number[][][], learningRate: number): void {
         dW.forEach((layer: number[][], i: number) =>
             layer.forEach((neuron: number[], j: number) =>
                 neuron.forEach((w: number, k: number) =>
