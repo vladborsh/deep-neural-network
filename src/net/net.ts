@@ -1,3 +1,5 @@
+import { Activations, ActivationType } from "./activations";
+
 interface NetOutputs {
     activations: number[][][],
     outputs: number[][][],
@@ -10,12 +12,12 @@ export class Net {
 		this.net = Net.initNet(inputLayer, layers)
     }
 
-    public learn(inputs: number[][], outputs: number[][], learningRate: number) {
+    public learn(inputs: number[][], outputs: number[][], learningRate: number): void {
         const ALLOWED_ERROR = 0.01;
         let error = 9999;
         let step = 0;
 
-        while (error > ALLOWED_ERROR || step < 10000) {
+        while (error > ALLOWED_ERROR && step < 100000) {
             error = 0;
             
             inputs.forEach((input: number[], i: number) => {
@@ -24,7 +26,7 @@ export class Net {
                 error += lost;
             });
             
-            error /= inputs.length;
+            error /= outputs.length;
             step++;
         }
     }
@@ -49,7 +51,9 @@ export class Net {
                         ...activations,
                         Net.applyFunction(
                             dot,
-                            (i < net.length-1 ? Net.relu : Net.sigmoid)
+                            (i < net.length-1 
+                                ? Activations.FUNCTION[ActivationType.RELU]
+                                : Activations.FUNCTION[ActivationType.SIGMOID])
                         ),
                     ],
                 };
@@ -63,7 +67,7 @@ export class Net {
 
         let delta = Net.product(
             [ Net.calculateCost(activations[activations.length-1][0], expectedOutputs) ],
-            Net.applyFunction(outputs[outputs.length-1], Net.sigmoid_),
+            Net.applyFunction(outputs[outputs.length-1], Activations.PRIME[ActivationType.SIGMOID]),
         );
 
         dW[this.net.length-1] = Net.dot(Net.transpose(activations[activations.length-2]), delta)
@@ -71,7 +75,7 @@ export class Net {
         for (let i = this.net.length-2; i > -1; i--) {
             delta = Net.product(
                 Net.transpose(Net.dot(this.net[i+1], Net.transpose(delta))),
-                Net.applyFunction(outputs[i], Net.relu_),
+                Net.applyFunction(outputs[i], Activations.PRIME[ActivationType.RELU]),
             );
             
             dW[i] = Net.dot(Net.transpose(activations[i]), delta)
@@ -166,33 +170,13 @@ export class Net {
     private static transpose(matrix: number[][]): number[][] {
         return matrix[0].map((_, i: number) => matrix.map((row: number[]) => row[i]));
     }
-    
-    private static relu(x: number): number {
-        return x > 0 ? x : 0;
-    }
-
-    private static relu_(x: number): number {
-        return x > 0 ? x : 0;
-    }
-
-    private static sigmoid(x: number): number {
-        return 1 / (1 + Math.exp(-x));
-    }
-
-    private static sigmoid_(x: number): number {
-        return Net.sigmoid(x) * (1 - Net.sigmoid(x));
-    }
 
     private static mse(yExpected: number, y: number): number {
         return Math.pow(yExpected - y, 2);
     }
 
-    private static mse_(yExpected: number, y: number): number {
-        return -2 * (yExpected - y);
-    }
-
     private static calculateCost(outputs: number[], expectedOutputs: number[]): number[] {
-        return outputs.map((y, i) => Net.mse_(expectedOutputs[i], y))
+        return outputs.map((y, i) => expectedOutputs[i] - y)
     }
 
     private static totalLost(outputs: number[], expectedOutputs: number[]): number {
