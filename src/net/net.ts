@@ -1,21 +1,25 @@
 import { Activations } from "./activations";
-import { NetOutputs } from "./types/net-outputs.intrface";
+import { NetOutputs } from "./types/net-outputs.interface";
 import { ActivationType } from "./types/activation-type.enum";
 import { LearnOutput } from "./types/learn-output.interface";
+import { DEFAULT_ALLOWED_ERROR, DEFAULT_ERROR, DEFAULT_EPOCH } from "./constatnts";
 
 export class Net {
-	private net: number[][][];
+    public static readonly DEFAULT_LAYER_ACTIVATION = ActivationType.RELU;
+    public static readonly DEFAULT_OUTPUT_ACTIVATION = ActivationType.SIGMOID;
+    
+    private net: number[][][];
 
 	constructor(inputLayer: number, ...layers: number[]) {
 		this.net = Net.initNet(inputLayer, layers)
     }
 
     public learn(inputs: number[][], outputs: number[][], learningRate: number): void {
-        const ALLOWED_ERROR = 0.01;
-        let error = 9999;
+        const ALLOWED_ERROR = DEFAULT_ALLOWED_ERROR;
+        let error = DEFAULT_ERROR;
         let step = 0;
 
-        while (error > ALLOWED_ERROR && step < 100000) {
+        while (error > ALLOWED_ERROR && step < DEFAULT_EPOCH) {
             error = 0;
             
             inputs.forEach((input: number[], i: number) => {
@@ -25,7 +29,6 @@ export class Net {
             });
             
             error /= outputs.length;
-            console.log(error);
             step++;
         }
     }
@@ -34,7 +37,7 @@ export class Net {
         const netOutputs = this.forwardPropagate(input);
 
         return {
-            lost: Net.totalLost(netOutputs.activations[netOutputs.activations.length-1][0], output),
+            lost: Net.totalLostSSE(netOutputs.activations[netOutputs.activations.length-1][0], output),
             dW: this.backPropagate(netOutputs, output),
         };
     }
@@ -51,8 +54,8 @@ export class Net {
                         Net.applyFunction(
                             dot,
                             (i < net.length-1 
-                                ? Activations.FUNCTION[ActivationType.RELU]
-                                : Activations.FUNCTION[ActivationType.SIGMOID])
+                                ? Activations.FUNCTION[Net.DEFAULT_LAYER_ACTIVATION]
+                                : Activations.FUNCTION[Net.DEFAULT_OUTPUT_ACTIVATION])
                         ),
                     ],
                 };
@@ -66,7 +69,7 @@ export class Net {
 
         let delta = Net.product(
             [ Net.calculateCost(activations[activations.length-1][0], expectedOutputs) ],
-            Net.applyFunction(sum[sum.length-1], Activations.PRIME[ActivationType.SIGMOID]),
+            Net.applyFunction(sum[sum.length-1], Activations.PRIME[Net.DEFAULT_OUTPUT_ACTIVATION]),
         );
 
         dW[this.net.length-1] = Net.dot(Net.transpose(activations[activations.length-2]), delta)
@@ -74,7 +77,7 @@ export class Net {
         for (let i = this.net.length-2; i > -1; i--) {
             delta = Net.product(
                 Net.transpose(Net.dot(this.net[i+1], Net.transpose(delta))),
-                Net.applyFunction(sum[i], Activations.PRIME[ActivationType.RELU]),
+                Net.applyFunction(sum[i], Activations.PRIME[Net.DEFAULT_LAYER_ACTIVATION]),
             );
             
             dW[i] = Net.dot(Net.transpose(activations[i]), delta)
@@ -97,21 +100,20 @@ export class Net {
         const result: number[][][] = new Array(layers.length);
 
 		layers.forEach((layer, i) => 
-			result[i] = i === 0 ? Net.initLayer(inputLayer, layer) : Net.initLayer(layers[i-1], layer),
+            result[i] = i === 0 
+                ? Net.initMatrix(inputLayer, layer) 
+                : Net.initMatrix(layers[i-1], layer),
 		);
 
 		return result;
-	}
-
-	private static initLayer(inputLayer: number, neurons: number): number[][] {
-		return Net.initMatrix(neurons, inputLayer);
 	}
 
 	private static initMatrix(width: number, height: number): number[][] {
         const result: number[][] = new Array(height);
 
 		for (let i = 0; i < result.length; i++) {
-			result[i] = new Array(width);
+            result[i] = new Array(width);
+            
 			for (let j = 0; j < result[i].length; j++) {
 				result[i][j] = (Math.random()-0.5);
 			}
@@ -124,9 +126,11 @@ export class Net {
         const result: number[][] = new Array(matrix1.length);
 
 		for (let i = 0; i < matrix1.length; i++) {
-			result[i] = new Array(matrix2[0].length);
+            result[i] = new Array(matrix2[0].length);
+            
 			for (let j = 0; j < matrix2[0].length; j++) {
-				result[i][j] = 0;
+                result[i][j] = 0;
+                
 				for (let k = 0; k < matrix1[0].length; k++) {
 					result[i][j] += matrix1[i][k] * matrix2[k][j];
 				}
@@ -144,7 +148,8 @@ export class Net {
         const result: number[][] = new Array(matrix1.length);
     
 		for (let i = 0; i < matrix1.length; i++) {
-			result[i] = new Array(matrix1[0].length);
+            result[i] = new Array(matrix1[0].length);
+            
 			for (let j = 0; j < matrix1[i].length; j++) {
 				result[i][j] = matrix1[i][j] * matrix2[i][j];
 			}
@@ -158,6 +163,7 @@ export class Net {
 
         for (let i = 0; i < result.length; i++) {
             result[i] = new Array(matrix[i].length);
+
 			for (let j = 0; j < result[i].length; j++) {
                 result[i][j] = func(matrix[i][j]);
             }
@@ -170,17 +176,13 @@ export class Net {
         return matrix[0].map((_, i: number) => matrix.map((row: number[]) => row[i]));
     }
 
-    private static mse(yExpected: number, y: number): number {
-        return Math.pow(yExpected - y, 2);
-    }
-
     private static calculateCost(outputs: number[], expectedOutputs: number[]): number[] {
         return outputs.map((y, i) => expectedOutputs[i] - y)
     }
 
-    private static totalLost(outputs: number[], expectedOutputs: number[]): number {
+    private static totalLostSSE(outputs: number[], expectedOutputs: number[]): number {
         return outputs.reduce(
-            (result, y, i) => result += Net.mse(expectedOutputs[i], y),
+            (result: number, y: number, i: number) => result += Math.pow(expectedOutputs[i] - y, 2),
             0
         ) / outputs.length;
     }
