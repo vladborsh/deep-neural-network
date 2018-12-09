@@ -14,12 +14,21 @@ export class Net {
 		this.net = Net.initNet(inputLayer, layers)
     }
 
+    public export() {
+        let content = `data:text/json;charset=utf-8,`;
+        content += `[\r\n${this.net.map((layer: number[][]) =>
+            `[\r\n${layer.map((neuron: number[]) =>
+                `[${neuron.join(',')}]`
+            ).join(',')}\r\n]`
+        )}\r\n]`;
+        window.open(encodeURI(content));
+    }
+
     public learn(inputs: number[][], outputs: number[][], learningRate: number): void {
-        const ALLOWED_ERROR = DEFAULT_ALLOWED_ERROR;
         let error = DEFAULT_ERROR;
         let step = 0;
 
-        while (error > ALLOWED_ERROR && step < DEFAULT_EPOCH) {
+        while (error > DEFAULT_ALLOWED_ERROR && step < DEFAULT_EPOCH) {
             error = 0;
             
             inputs.forEach((input: number[], i: number) => {
@@ -31,6 +40,7 @@ export class Net {
             error /= outputs.length;
             step++;
         }
+
     }
 
     private learnStep(input: number[], output: number[]): LearnOutput {
@@ -124,6 +134,8 @@ export class Net {
 
 	private static dot(matrix1: number[][], matrix2: number[][]): number[][] {
         const result: number[][] = new Array(matrix1.length);
+
+        console.log(matrix1, matrix2)
 
 		for (let i = 0; i < matrix1.length; i++) {
             result[i] = new Array(matrix2[0].length);
