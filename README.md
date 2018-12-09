@@ -1,14 +1,34 @@
-# Typescript project starter
+# Deep neural network
 
-Following project contains starter and config for simple typescript project. Default address: ```localhost:4100```
+Simple deep neural network.
 
-## Features
+``` typescript
+import { Net } from "./net/net";
 
-* Typescript
-* Webpack
-* Live dev server
-* Karma & Jasmine
-* TravisCI
+const network = new Net(10, 8, 7, 5);
+network.learn(inputs, outputs, 0.001);
+```
+
+Create exmple data snippet 
+
+``` typescript
+const inputs = [];
+const outputs = [];
+for (let i = 0; i < 100; i++) {
+	const input = [];
+	for (let j = 0; j < 10; j++) {
+		input.push(Math.random() > 0.5 ? 1 : 0);
+	}
+	inputs.push(input);
+	outputs.push([ 
+		1 / (input[0] || 1),
+		1 / ((input[1] + input[2]) || 1),
+		1 / ((input[5]) || 1),
+		1 / ((input[6] + input[9] + input[3]) || 1),
+		1 / ((input[8]|input[1]) || 1),
+	]);
+}
+```
 
 ## Installation
 
