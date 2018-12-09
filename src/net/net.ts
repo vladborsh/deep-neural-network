@@ -15,13 +15,13 @@ export class Net {
     }
 
     public export() {
-        let content = `data:text/json;charset=utf-8,`;
-        content += `[\r\n${this.net.map((layer: number[][]) =>
-            `[\r\n${layer.map((neuron: number[]) =>
-                `[${neuron.join(',')}]`
-            ).join(',')}\r\n]`
-        )}\r\n]`;
-        window.open(encodeURI(content));
+        var dataStr = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(this.net))}`;
+        var downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute('href', dataStr);
+        downloadAnchorNode.setAttribute('download', 'model.json');
+        document.body.appendChild(downloadAnchorNode); // required for firefox
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
     }
 
     public learn(inputs: number[][], outputs: number[][], learningRate: number): void {
@@ -40,7 +40,6 @@ export class Net {
             error /= outputs.length;
             step++;
         }
-
     }
 
     private learnStep(input: number[], output: number[]): LearnOutput {
@@ -111,11 +110,15 @@ export class Net {
 
 		layers.forEach((layer, i) => 
             result[i] = i === 0 
-                ? Net.initMatrix(inputLayer, layer) 
-                : Net.initMatrix(layers[i-1], layer),
+                ? Net.initLayer(inputLayer, layer) 
+                : Net.initLayer(layers[i-1], layer),
 		);
 
 		return result;
+    }
+    
+    private static initLayer(inputLayer: number, neurons: number): number[][] {
+		return Net.initMatrix(neurons, inputLayer);
 	}
 
 	private static initMatrix(width: number, height: number): number[][] {
@@ -134,8 +137,6 @@ export class Net {
 
 	private static dot(matrix1: number[][], matrix2: number[][]): number[][] {
         const result: number[][] = new Array(matrix1.length);
-
-        console.log(matrix1, matrix2)
 
 		for (let i = 0; i < matrix1.length; i++) {
             result[i] = new Array(matrix2[0].length);
