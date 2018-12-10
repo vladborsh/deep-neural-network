@@ -4,11 +4,21 @@ Simple deep neural network.
 
 Easy to teach:
 ``` typescript
-import { Net } from "./net/net";
-
 const network = new Net(10, 8, 7, 5);
 network.train(inputs, outputs, 0.001);
 ```
+
+View results of training:
+``` typescript
+const network = new Net(10, 8, 7, 5);
+
+network
+    .trainOutput()
+    .subscripe((lOutput: LearnOutput) => console.log(lOutput.lost));
+
+network.train(inputs, outputs, 0.001);
+```
+
 
 You can export your model as json file
 ``` typescript

@@ -8,7 +8,8 @@ import { BehaviorSubject } from 'rxjs';
 export class Net {
     public static readonly DEFAULT_LAYER_ACTIVATION = ActivationType.RELU;
     public static readonly DEFAULT_OUTPUT_ACTIVATION = ActivationType.SIGMOID;
-    public learnOutput: BehaviorSubject<LearnOutput> = new BehaviorSubject<LearnOutput>({ dW: null, lost: null });
+    
+    public readonly trainOutput: BehaviorSubject<LearnOutput> = new BehaviorSubject<LearnOutput>({ dW: null, lost: null });
     
     private net: number[][][];
 
@@ -37,7 +38,7 @@ export class Net {
                 const { dW, lost }: LearnOutput = this.learnStep(input, outputs[i]);
                 error += lost;
 
-                this.learnOutput.next({ dW, lost });
+                this.trainOutput.next({ dW, lost });
                 this.updateNet(dW, learningRate);
             });
             
