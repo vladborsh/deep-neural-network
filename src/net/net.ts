@@ -3,10 +3,12 @@ import { NetOutputs } from "./types/net-outputs.interface";
 import { ActivationType } from "./types/activation-type.enum";
 import { LearnOutput } from "./types/learn-output.interface";
 import { DEFAULT_ALLOWED_ERROR, DEFAULT_ERROR, DEFAULT_EPOCH } from "./constatnts";
+import { BehaviorSubject } from 'rxjs';
 
 export class Net {
     public static readonly DEFAULT_LAYER_ACTIVATION = ActivationType.RELU;
     public static readonly DEFAULT_OUTPUT_ACTIVATION = ActivationType.SIGMOID;
+    public learnOutput: BehaviorSubject<LearnOutput> = new BehaviorSubject<LearnOutput>({ dW: null, lost: null });
     
     private net: number[][][];
 
@@ -33,13 +35,19 @@ export class Net {
             
             inputs.forEach((input: number[], i: number) => {
                 const { dW, lost }: LearnOutput = this.learnStep(input, outputs[i]);
-                this.updateNet(dW, learningRate);
                 error += lost;
+
+                this.learnOutput.next({ dW, lost });
+                this.updateNet(dW, learningRate);
             });
             
             error /= outputs.length;
             step++;
         }
+    }
+
+    public run(input: number[]): number[] {
+        return this.forwardPropagate(input).activations.pop().pop();
     }
 
     private learnStep(input: number[], output: number[]): LearnOutput {

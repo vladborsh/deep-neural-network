@@ -30,5 +30,8 @@
     "awesome-typescript-loader": "latest",
     "progress-bar-webpack-plugin": "latest",
     "html-webpack-plugin": "latest"
+  },
+  "dependencies": {
+    "rxjs": "^6.3.3"
   }
 }
