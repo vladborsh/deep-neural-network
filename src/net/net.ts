@@ -26,7 +26,7 @@ export class Net {
         downloadAnchorNode.remove();
     }
 
-    public learn(inputs: number[][], outputs: number[][], learningRate: number): void {
+    public train(inputs: number[][], outputs: number[][], learningRate: number): void {
         let error = DEFAULT_ERROR;
         let step = 0;
 
@@ -44,6 +44,16 @@ export class Net {
             error /= outputs.length;
             step++;
         }
+    }
+
+    public evolve(rate: number): void {
+        this.net.forEach((layer: number[][], i: number) =>
+            layer.forEach((neuron: number[], j: number) =>
+                neuron.forEach((w: number, k: number) =>
+                    this.net[i][j][k] += (0.5 - Math.random()) * rate
+                ),
+            ),
+        ); 
     }
 
     public run(input: number[]): number[] {
@@ -136,7 +146,7 @@ export class Net {
             result[i] = new Array(width);
             
 			for (let j = 0; j < result[i].length; j++) {
-				result[i][j] = (Math.random()-0.5);
+				result[i][j] = (0.5 - Math.random());
 			}
 		}
 	
