@@ -35,7 +35,7 @@ export class Net {
             error = 0;
             
             inputs.forEach((input: number[], i: number) => {
-                const { dW, lost }: LearnOutput = this.learnStep(input, outputs[i]);
+                const { dW, lost }: LearnOutput = this.trainStep(input, outputs[i]);
                 error += lost;
 
                 this.trainOutput.next({ dW, lost });
@@ -50,7 +50,7 @@ export class Net {
     public evolve(rate: number): void {
         this.net.forEach((layer: number[][], i: number) =>
             layer.forEach((neuron: number[], j: number) =>
-                neuron.forEach((w: number, k: number) =>
+                neuron.forEach((_: number, k: number) =>
                     this.net[i][j][k] += (0.5 - Math.random()) * rate
                 ),
             ),
@@ -61,7 +61,7 @@ export class Net {
         return this.forwardPropagate(input).activations.pop().pop();
     }
 
-    private learnStep(input: number[], output: number[]): LearnOutput {
+    private trainStep(input: number[], output: number[]): LearnOutput {
         const netOutputs = this.forwardPropagate(input);
 
         return {
@@ -117,8 +117,8 @@ export class Net {
     private updateNet(dW: number[][][], learningRate: number): void {
         dW.forEach((layer: number[][], i: number) =>
             layer.forEach((neuron: number[], j: number) =>
-                neuron.forEach((w: number, k: number) =>
-                    this.net[i][j][k] += learningRate * w
+                neuron.forEach((dW: number, k: number) =>
+                    this.net[i][j][k] += learningRate * dW
                 ),
             ),
         );
